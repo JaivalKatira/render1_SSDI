@@ -1,39 +1,59 @@
-from flask import Flask, jsonify
+from flask import Flask, request, jsonify
+import pandas as pd
 import numpy as np
 from scipy import stats
 
 app = Flask(__name__)
 
 @app.route("/")
+def home():
+    return """
+    <h2>CSV Hypothesis Testing API</h2>
+    <p>Upload CSV using POST /test</p>
+    """
+
+@app.route("/test", methods=["POST"])
 def hypothesis_test():
 
-    alpha = 0.05
-    xbar = 0.7
-    H0 = 0.8
-    n = 150
+    file = request.files["file"]
+    column = request.form["column"]
+    alpha = float(request.form["alpha"])
+    H0 = float(request.form["H0"])
 
-    SD = np.sqrt(xbar * (1 - xbar))
-    s = SD / np.sqrt(n)
+    df = pd.read_csv(file)
 
-    tcal = (xbar - H0) / s
+    if column not in df.columns:
+        return jsonify({"error": "Column not found in dataset"})
 
-    t_table_negative = stats.t.ppf(alpha / 2, n - 1)
-    t_table_positive = stats.t.ppf(1 - alpha / 2, n - 1)
+    data = df[column].dropna()
+
+    xbar = np.mean(data)
+    n = len(data)
+    sd = np.std(data, ddof=1)
+
+    se = sd / np.sqrt(n)
+
+    tcal = (xbar - H0) / se
+
+    t_neg = stats.t.ppf(alpha / 2, n - 1)
+    t_pos = stats.t.ppf(1 - alpha / 2, n - 1)
 
     p_value = stats.t.cdf(tcal, n - 1) * 2
 
-    if tcal < t_table_negative or tcal > t_table_positive:
-        result = "Reject the Null Hypothesis (H0)"
+    if tcal < t_neg or tcal > t_pos:
+        result = "Reject H0"
     else:
-        result = "Fail to Reject the Null Hypothesis (H0)"
+        result = "Fail to Reject H0"
 
     return jsonify({
-        "Standard Error": float(s),
-        "Calculated t-score": float(tcal),
-        "Critical Negative": float(t_table_negative),
-        "Critical Positive": float(t_table_positive),
-        "P-value": float(p_value),
-        "Result": result
+        "column": column,
+        "sample_mean": float(xbar),
+        "n": n,
+        "t_score": float(tcal),
+        "p_value": float(p_value),
+        "critical_negative": float(t_neg),
+        "critical_positive": float(t_pos),
+        "result": result
     })
 
 
