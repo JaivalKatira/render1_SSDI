@@ -8,8 +8,19 @@ app = Flask(__name__)
 @app.route("/")
 def home():
     return """
-    <h2>CSV Hypothesis Testing API</h2>
-    <p>Upload CSV using POST /test</p>
+    <h2>CSV Hypothesis Testing</h2>
+
+    <form action="/test" method="post" enctype="multipart/form-data">
+        Upload CSV: <input type="file" name="file"><br><br>
+
+        Column Name: <input type="text" name="column"><br><br>
+
+        Significance Level (alpha): <input type="text" name="alpha"><br><br>
+
+        Hypothesized Mean (H0): <input type="text" name="H0"><br><br>
+
+        <input type="submit" value="Run Hypothesis Test">
+    </form>
     """
 
 @app.route("/test", methods=["POST"])
@@ -59,3 +70,4 @@ def hypothesis_test():
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
+
