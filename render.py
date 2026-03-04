@@ -13,85 +13,82 @@ html_page = """
 
 <style>
 body{
-    background:#111;
-    color:white;
-    font-family:Arial;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    height:100vh;
+background:#111;
+color:white;
+font-family:Arial;
+display:flex;
+justify-content:center;
+align-items:center;
+height:100vh;
+margin:0;
 }
 
 .container{
-    background:#1e1e1e;
-    padding:40px;
-    border-radius:10px;
-    width:450px;
+background:#1e1e1e;
+padding:40px;
+border-radius:10px;
+width:450px;
 }
 
-h2{
-    text-align:center;
-}
+h2{text-align:center;}
 
-input, select{
-    width:100%;
-    padding:8px;
-    margin-top:5px;
-    margin-bottom:15px;
-    border-radius:5px;
-    border:none;
+input,select{
+width:100%;
+padding:8px;
+margin-top:5px;
+margin-bottom:15px;
+border-radius:5px;
+border:none;
 }
 
 button{
-    width:100%;
-    padding:10px;
-    background:white;
-    color:black;
-    border:none;
-    border-radius:5px;
-    font-weight:bold;
+width:100%;
+padding:10px;
+background:white;
+color:black;
+border:none;
+border-radius:5px;
+font-weight:bold;
 }
 
-button:hover{
-    background:#ddd;
-}
+button:hover{background:#ddd;}
 
 .result{
-    margin-top:20px;
-    background:#222;
-    padding:15px;
-    border-radius:5px;
+margin-top:20px;
+background:#222;
+padding:15px;
+border-radius:5px;
 }
 </style>
 
 <script>
 function loadColumns(){
 
-    let fileInput = document.getElementById("file")
+let fileInput=document.getElementById("file")
 
-    let reader = new FileReader()
+let reader=new FileReader()
 
-    reader.onload = function(e){
+reader.onload=function(e){
 
-        let text = e.target.result
+let text=e.target.result
+let firstLine=text.split("\\n")[0]
+let columns=firstLine.split(",")
 
-        let firstLine = text.split("\\n")[0]
+let dropdown=document.getElementById("column")
 
-        let columns = firstLine.split(",")
+dropdown.innerHTML=""
 
-        let dropdown = document.getElementById("column")
+columns.forEach(col=>{
+let option=document.createElement("option")
+option.value=col
+option.text=col
+dropdown.appendChild(option)
+})
 
-        dropdown.innerHTML=""
+}
 
-        columns.forEach(col=>{
-            let option = document.createElement("option")
-            option.value=col
-            option.text=col
-            dropdown.appendChild(option)
-        })
-    }
+reader.readAsText(fileInput.files[0])
 
-    reader.readAsText(fileInput.files[0])
 }
 </script>
 
@@ -115,7 +112,7 @@ function loadColumns(){
 <input type="number" step="0.01" name="alpha" value="0.05">
 
 <label>Hypothesized Mean (H0)</label>
-<input type="number" step="0.01" name="H0">
+<input type="number" step="0.01" name="H0" required>
 
 <button type="submit">Run Hypothesis Test</button>
 
@@ -127,10 +124,10 @@ function loadColumns(){
 
 <h3>Results</h3>
 
-Sample Mean: {{mean}} <br>
-Sample Size: {{n}} <br>
-T-score: {{t}} <br>
-P-value: {{p}} <br>
+<p>Sample Mean: {{mean}}</p>
+<p>Sample Size: {{n}}</p>
+<p>T Score: {{t}}</p>
+<p>P Value: {{p}}</p>
 
 <h3>{{result}}</h3>
 
@@ -144,38 +141,36 @@ P-value: {{p}} <br>
 </html>
 """
 
-
 @app.route("/")
 def home():
     return render_template_string(html_page)
 
-
 @app.route("/test", methods=["POST"])
 def hypothesis_test():
 
-    file = request.files["file"]
-    column = request.form["column"]
-    alpha = float(request.form["alpha"])
-    H0 = float(request.form["H0"])
+    file=request.files["file"]
+    column=request.form["column"]
+    alpha=float(request.form["alpha"])
+    H0=float(request.form["H0"])
 
-    df = pd.read_csv(file)
+    df=pd.read_csv(file)
 
-    data = df[column].dropna()
+    data=df[column].dropna()
 
-    xbar = np.mean(data)
-    n = len(data)
-    sd = np.std(data, ddof=1)
+    xbar=np.mean(data)
+    n=len(data)
+    sd=np.std(data,ddof=1)
 
-    se = sd / np.sqrt(n)
+    se=sd/np.sqrt(n)
 
-    tcal = (xbar - H0) / se
+    tcal=(xbar-H0)/se
 
-    p_value = stats.t.cdf(tcal, n - 1) * 2
+    p_value=stats.t.cdf(tcal,n-1)*2
 
-    if p_value < alpha:
-        result = "Reject Null Hypothesis"
+    if p_value<alpha:
+        result="Reject Null Hypothesis"
     else:
-        result = "Fail to Reject Null Hypothesis"
+        result="Fail to Reject Null Hypothesis"
 
     return render_template_string(
         html_page,
@@ -186,7 +181,5 @@ def hypothesis_test():
         p=round(p_value,5)
     )
 
-
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=10000)
-
+if __name__=="__main__":
+    app.run(host="0.0.0.0",port=10000)
